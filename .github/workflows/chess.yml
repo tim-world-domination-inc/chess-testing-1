@@ -42,10 +42,10 @@ jobs:
         ruby-version: 3.2
         bundler-cache: true
 
-    # - name: Install dependencies
-    #   run: |
-    #     gem install bundler
-    #     bundle install --jobs 4 --retry 3
+    - name: Install dependencies
+      run: |
+        gem install bundler
+        bundle install --jobs 4 --retry 3
 
     - name: Parse the issue title
       run: |
