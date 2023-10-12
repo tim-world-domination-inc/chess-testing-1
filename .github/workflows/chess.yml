@@ -42,10 +42,10 @@ jobs:
         ruby-version: 3.2
         bundler-cache: true
 
-    - name: Install dependencies
-      run: |
-        gem install bundler
-        bundle install --jobs 4 --retry 3
+    # - name: Install dependencies
+    #   run: |
+    #     gem install bundler
+    #     bundle install --jobs 4 --retry 3
 
     - name: Parse the issue title
       run: |
@@ -103,7 +103,7 @@ jobs:
         # load game file. Throws an exception otherwise, which is caught and sets 
         # environment variable CHESS_CANT_LOAD=true
         ruby <<- EORUBY
-          require 'chess'
+          # require 'chess'
           begin
             game = Chess::Game.load_pgn ENV.fetch('GAME_DATA_PATH')
           rescue StandardError => e
