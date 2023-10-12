@@ -20,14 +20,16 @@ jobs:
         
         if [[ -z ${ISSUE+x} ]]; then
           echo "FAILURE Open issue #${{ github.event.issue.number }} not found."
-          exit 1
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
         fi
     - name: Not chess?
       run: |
         set -xe
         if [[ "$(echo "$ISSUE" | jq .title)" =~ ^chess* ]]; then
           echo "FAILURE Not chess."
-          exit 1
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
         fi
         
     - name: React
@@ -41,11 +43,6 @@ jobs:
       with:
         ruby-version: 3.2
         bundler-cache: true
-
-    # - name: Install dependencies
-    #   run: |
-    #     gem install bundler
-    #     bundle install --jobs 4 --retry 3
 
     - name: Parse the issue title
       run: |
@@ -68,7 +65,8 @@ jobs:
           # close issue
           gh issue close ${{ github.event.issue.number }}
           echo "INVALID The game title or move was unable to be parsed."
-          exit 1
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
         fi
 
         echo "CHESS_GAME_NUM=$CHESS_GAME_NUM" >> $GITHUB_ENV
@@ -93,7 +91,8 @@ jobs:
           # close issue
           gh issue close ${{ github.event.issue.number }}
           echo "INVALID Same player making consecutive moves."
-          exit 1
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
         fi
 
     - name: Check if saved game PGN error - part 1
@@ -134,11 +133,12 @@ jobs:
           gh issue close ${{ github.event.issue.number }}
 
           # create new issue as timburgan TIMBURGAN_PAT_NEW_ISSUE with `chess|new`
-          gh auth logout --hostname github.com && echo "${{ secrets.TIMBURGAN_PAT_NEW_ISSUE }}" | gh auth login --with-token
+          echo "${{ secrets.TIMBURGAN_PAT_NEW_ISSUE }}" | gh auth login --with-token
           gh issue create --title "chess|new" --body "See #${{ github.event.issue.number }}" --repo ${{ github.repository }}
 
           echo "FAILURE The game data is corrupt. A new game will be booted in a moment."
-          exit 1
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
         fi
 
     - name: Check if new game requested
@@ -165,7 +165,8 @@ jobs:
         PAGER= gh api /repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/reactions -f content='confused' | jq .
         gh issue comment ${{ github.event.issue.number }} --body "@$(echo "$ISSUE" | jq -r .author.login) This is an invalid new game request. If a new game is genuinely needed, create a new issue and ping @timburgan."
         gh issue close ${{ github.event.issue.number }}
-        exit 1
+        gh run cancel ${{ github.run_id }}
+        gh run watch ${{ github.run_id }}
 
     - name: Create new game
       if: ${{ env.CHESS_NEW_GAME == 'true' }}
@@ -216,7 +217,9 @@ jobs:
           gh issue comment ${{ github.event.issue.number }} --body "@$(echo "$ISSUE" | jq -r .author.login) Whaaa.. '${CHESS_USER_MOVE}' is an invalid move! Usually this is because someone squeezed a move in just before you."
           # close issue
           gh issue close ${{ github.event.issue.number }}
-          exit 1
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+          
         fi
 
         # write stats
